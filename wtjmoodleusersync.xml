@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+<extension type="plugin" method="upgrade" group="user">
+    <name>User - WT JMoodle User sync</name>
+    <author>Sergey Tolkachyov</author>
+    <authorEmail>info@web-tolk.ru</authorEmail>
+    <authorUrl>https://web-tolk.ru/</authorUrl>
+	<creationDate>December 2023</creationDate>
+    <copyright>2023 Sergey Tolkachyov</copyright>
+    <license>GNU General Public License v3.0</license>
+    <version>1.0.0</version>
+    <description>Sync Joomla and Moodle users and Single Sign On (SSO) for Joomla and Moodle</description>
+    <namespace path="src">Joomla\Plugin\User\Wtjmoodleusersync</namespace>
+	<files>
+        <folder plugin="wtjmoodleusersync">src</folder>
+        <folder>services</folder>
+    </files>
+    <languages>
+        <language tag="ru-RU">language/ru-RU/plg_user_wtjmoodleusersync.ini</language>
+        <language tag="ru-RU">language/ru-RU/plg_user_wtjmoodleusersync.sys.ini</language>
+        <language tag="en-GB">language/en-GB/plg_user_wtjmoodleusersync.ini</language>
+        <language tag="en-GB">language/en-GB/plg_user_wtjmoodleusersync.sys.ini</language>
+    </languages>
+    <config>
+        <fields name="params">
+            <fieldset name="basic">
+                <field addfieldprefix="Joomla\Plugin\User\Wtjmoodleusersync\Fields"
+                       type="plugininfo"
+                       name="plugininfo"/>
+                <field type="note"
+                       name="password_complexity"
+                       description="PLG_WTJMOODLEUSERSYNC_PASSWORD_COMPLEXITY"
+                       class="alert alert-warning my-3"/>
+                <field addfieldprefix="Joomla\Plugin\User\Wtjmoodleusersync\Fields"
+                       type="checkusermethods"
+                       name="checkusermethods"/>
+                <field type="radio"
+                       name="use_sso"
+                       label="PLG_WTJMOODLEUSERSYNC_USE_SSO"
+                       layout="joomla.form.field.radio.switcher"
+                       default="0"
+                       filter="integer"
+                >
+                    <option value="0">JNO</option>
+                    <option value="1">JYES</option>
+                </field>
+                <field type="note"
+                       name="use_sso_desc"
+                       description="PLG_WTJMOODLEUSERSYNC_USE_SSO_DESC"
+                       class="alert alert-info"/>
+            </fieldset>
+        </fields>
+    </config>
+</extension>
