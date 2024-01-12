@@ -1,4 +1,4 @@
-# WT-JMoodle-user-sync
+# WT JMoodle user sync
 A plugin for synchronizing Joomla and Moodle users. Single Sing On (SSO) for Joomla and Moodle.
 
 Plugin can create, update and delete user in Moodle when he/she created, updated or deleted in Joomla.

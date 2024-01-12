@@ -16,6 +16,7 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Installer\InstallerAdapter;
 use Joomla\CMS\Installer\InstallerScriptInterface;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\Database\DatabaseDriver;
 use Joomla\DI\Container;
 use Joomla\DI\ServiceProviderInterface;
@@ -172,6 +173,20 @@ return new class () implements ServiceProviderInterface {
 
 				$html .= Text::_($element . '_WHATS_NEW');
 
+				if ($type !== 'uninstall')
+				{
+					/**
+					 * Joomla WT JMoodle library
+					 */
+
+					$wt_jmoodle_library_url = 'https://web-tolk.ru/get?element=wtjmoodle';
+					if (!$this->installDependencies($adapter, $wt_jmoodle_library_url))
+					{
+
+					}
+				}
+
+
 				$html .= '</div>
 				<div class="col-12 col-md-4 p-0 d-flex flex-column justify-content-start">
 				<img width="180" src="https://web-tolk.ru/web_tolk_logo_wide.png">
@@ -188,6 +203,128 @@ return new class () implements ServiceProviderInterface {
 
 				return true;
 			}
+
+			/**
+			 * @param $adapter
+			 *
+			 * @return bool
+			 * @throws Exception
+			 *
+			 *
+			 * @since 1.0.0
+			 */
+			protected function installDependencies($adapter, $url)
+			{
+				// Load installer plugins for assistance if required:
+				PluginHelper::importPlugin('installer');
+
+				$package = null;
+
+				// This event allows an input pre-treatment, a custom pre-packing or custom installation.
+				// (e.g. from a JSON description).
+//                $results = $this->app->triggerEvent('onInstallerBeforeInstallation', array($this, &$package));
+//
+//                if (in_array(true, $results, true))
+//                {
+//                    return true;
+//                }
+//
+//                if (in_array(false, $results, true))
+//                {
+//                    return false;
+//                }
+
+
+				// Download the package at the URL given.
+				$p_file = InstallerHelper::downloadPackage($url);
+
+				// Was the package downloaded?
+				if (!$p_file) {
+					$this->app->enqueueMessage(Text::_('COM_INSTALLER_MSG_INSTALL_INVALID_URL'), 'error');
+
+					return false;
+				}
+
+				$config = Factory::getContainer()->get('config');
+				$tmp_dest = $config->get('tmp_path');
+
+				// Unpack the downloaded package file.
+				$package = InstallerHelper::unpack($tmp_dest . '/' . $p_file, true);
+
+				// This event allows a custom installation of the package or a customization of the package:
+//                $results = $this->app->triggerEvent('onInstallerBeforeInstaller', array($this, &$package));
+
+//                if (in_array(true, $results, true))
+//                {
+//                    return true;
+//                }
+
+//                if (in_array(false, $results, true))
+//                {
+//                    InstallerHelper::cleanupInstall($package['packagefile'], $package['extractdir']);
+//
+//                    return false;
+//                }
+
+				// Get an installer instance.
+				$installer = new Installer();
+
+				/*
+				 * Check for a Joomla core package.
+				 * To do this we need to set the source path to find the manifest (the same first step as JInstaller::install())
+				 *
+				 * This must be done before the unpacked check because JInstallerHelper::detectType() returns a boolean false since the manifest
+				 * can't be found in the expected location.
+				 */
+				if (is_array($package) && isset($package['dir']) && is_dir($package['dir'])) {
+					$installer->setPath('source', $package['dir']);
+
+					if (!$installer->findManifest()) {
+						InstallerHelper::cleanupInstall($package['packagefile'], $package['extractdir']);
+						$this->app->enqueueMessage(Text::sprintf('COM_INSTALLER_INSTALL_ERROR', '.'), 'warning');
+
+						return false;
+					}
+				}
+
+				// Was the package unpacked?
+				if (!$package || !$package['type']) {
+					InstallerHelper::cleanupInstall($package['packagefile'], $package['extractdir']);
+					$this->app->enqueueMessage(Text::_('COM_INSTALLER_UNABLE_TO_FIND_INSTALL_PACKAGE'), 'error');
+
+					return false;
+				}
+
+				// Install the package.
+				if (!$installer->install($package['dir'])) {
+					// There was an error installing the package.
+					$msg = Text::sprintf('COM_INSTALLER_INSTALL_ERROR',
+						Text::_('COM_INSTALLER_TYPE_TYPE_' . strtoupper($package['type'])));
+					$result = false;
+					$msgType = 'error';
+				} else {
+					// Package installed successfully.
+					$msg = Text::sprintf('COM_INSTALLER_INSTALL_SUCCESS',
+						Text::_('COM_INSTALLER_TYPE_TYPE_' . strtoupper($package['type'])));
+					$result = true;
+					$msgType = 'message';
+				}
+
+				// This event allows a custom a post-flight:
+//                $this->app->triggerEvent('onInstallerAfterInstaller', array($adapter, &$package, $installer, &$result, &$msg));
+
+				$this->app->enqueueMessage($msg, $msgType);
+
+				// Cleanup the install files.
+				if (!is_file($package['packagefile'])) {
+					$package['packagefile'] = $config->get('tmp_path') . '/' . $package['packagefile'];
+				}
+
+				InstallerHelper::cleanupInstall($package['packagefile'], $package['extractdir']);
+
+				return $result;
+			}
+
 		});
 	}
 };
