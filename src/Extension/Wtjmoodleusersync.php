@@ -1,9 +1,9 @@
 <?php
 /**
- * @package       WT Amocrm Library
- * @version       1.2.1
+ * @package       WT JMoodle user sync
+ * @version       1.0.0
  * @Author        Sergey Tolkachyov, https://web-tolk.ru
- * @сopyright (c) 2022 - October 2023 Sergey Tolkachyov. All rights reserved.
+ * @сopyright (c) January 2024 Sergey Tolkachyov. All rights reserved.
  * @license       GNU/GPL3 http://www.gnu.org/licenses/gpl-3.0.html
  * @since         1.0.0
  */
@@ -122,16 +122,16 @@ class Wtjmoodleusersync extends CMSPlugin implements SubscriberInterface
 			];
 
 			/**
-			 * @var $moodle_users array An array of Moodle users created
-			 *                    Array
-			 *                        (
-			 *                         [0] =>
-			 *                             Array
-			 *                                 (
+			 * @var $moodle_users                  array An array of Moodle users created
+			 *                                     Array
+			 *                                     (
+			 *                                     [0] =>
+			 *                                     Array
+			 *                                     (
 			 *                                     [id] => int
 			 *                                     [username] => string
-			 *                                 )
-			 *                        )
+			 *                                     )
+			 *                                     )
 			 */
 			$moodle_users = $moodle->request('core_user_create_users', $user_data);
 			if (count($moodle_users) > 0 && !array_key_exists('error_code', $moodle_users))
@@ -256,7 +256,7 @@ class Wtjmoodleusersync extends CMSPlugin implements SubscriberInterface
 	public function onUserAfterLogin($event): void
 	{
 
-		if(!$this->params->get('use_sso'))
+		if (!$this->params->get('use_sso'))
 		{
 			// SSO is disabled
 			return;
@@ -350,6 +350,11 @@ class Wtjmoodleusersync extends CMSPlugin implements SubscriberInterface
 	 */
 	public function onUserLogout($event): void
 	{
+		if (!$this->params->get('use_sso'))
+		{
+			// SSO is disabled
+			return;
+		}
 		/**
 		 * @var   array $user    Holds the user data
 		 * @var   array $options Array holding options (remember, autoregister, group)
@@ -397,6 +402,7 @@ class Wtjmoodleusersync extends CMSPlugin implements SubscriberInterface
 	public function onUserAfterResetComplete($user)
 	{
 
+
 	}
 
 	public function onAjaxWtjmoodleusersync($event): void
@@ -413,8 +419,9 @@ class Wtjmoodleusersync extends CMSPlugin implements SubscriberInterface
 			throw new \Exception('Wrong token', 403);
 		}
 
+
 		// Check action
-		if ($action == 'check_joomla_user_session')
+		if ($action == 'check_joomla_user_session' && $this->params->get('use_sso'))
 		{
 			$username = $app->getInput()->json->getCmd('username');
 			$user     = Factory::getContainer()->get(UserFactoryInterface::class)->loadUserByUsername($username);
@@ -440,7 +447,5 @@ class Wtjmoodleusersync extends CMSPlugin implements SubscriberInterface
 
 			$event->setArgument('result', $logged_in);
 		}
-
 	}
-
 }

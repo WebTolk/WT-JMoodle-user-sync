@@ -4,11 +4,11 @@
     <author>Sergey Tolkachyov</author>
     <authorEmail>info@web-tolk.ru</authorEmail>
     <authorUrl>https://web-tolk.ru/</authorUrl>
-	<creationDate>December 2023</creationDate>
+	<creationDate>January 2024</creationDate>
     <copyright>2023 Sergey Tolkachyov</copyright>
     <license>GNU General Public License v3.0</license>
     <version>1.0.0</version>
-    <description>Sync Joomla and Moodle users and Single Sign On (SSO) for Joomla and Moodle</description>
+    <description>PLG_WTJMOODLEUSERSYNC_DESC</description>
     <namespace path="src">Joomla\Plugin\User\Wtjmoodleusersync</namespace>
 	<files>
         <folder plugin="wtjmoodleusersync">src</folder>
@@ -50,4 +50,8 @@
             </fieldset>
         </fields>
     </config>
+    <updateservers>
+        <server type="extension" priority="1" name="WT JMoodle User sync updates">https://web-tolk.ru/component/swjprojects/jupdate?element=wtjmoodleusersync</server>
+    </updateservers>
+    <changelogurl>https://web-tolk.ru/jchangelog?element=wtjmoodleusersync</changelogurl>
 </extension>
