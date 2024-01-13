@@ -13,6 +13,8 @@ defined('_JEXEC') or die('Restricted access');
 
 use Joomla\CMS\Application\AdministratorApplication;
 use Joomla\CMS\Factory;
+use Joomla\CMS\Installer\Installer;
+use Joomla\CMS\Installer\InstallerHelper;
 use Joomla\CMS\Installer\InstallerAdapter;
 use Joomla\CMS\Installer\InstallerScriptInterface;
 use Joomla\CMS\Language\Text;
@@ -20,6 +22,8 @@ use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\Database\DatabaseDriver;
 use Joomla\DI\Container;
 use Joomla\DI\ServiceProviderInterface;
+
+
 
 return new class () implements ServiceProviderInterface {
 
@@ -172,7 +176,7 @@ return new class () implements ServiceProviderInterface {
 				' . Text::_($element . '_DESC');
 
 				$html .= Text::_($element . '_WHATS_NEW');
-
+				$wt_jmoodle_library_install_status = '';
 				if ($type !== 'uninstall')
 				{
 					/**
@@ -182,12 +186,15 @@ return new class () implements ServiceProviderInterface {
 					$wt_jmoodle_library_url = 'https://web-tolk.ru/get?element=wtjmoodle';
 					if (!$this->installDependencies($adapter, $wt_jmoodle_library_url))
 					{
-
+						$wt_jmoodle_library_install_status = '<p class="text-danger"><code> WT JMoodle library</code>  has not installed. Please, <a href="https://web-tolk.ru/en/dev/biblioteki/wt-jmoodle-library-for-cms-joomla-and-lms-moodle-rest-api-connection" target="_blank">download</a> and install it manually.</p>';
+					}
+					else {
+						$wt_jmoodle_library_install_status = '<p class="text-success"><code> WT JMoodle library</code> successfully installed.';
 					}
 				}
 
 
-				$html .= '</div>
+				$html .= $wt_jmoodle_library_install_status.'</div>
 				<div class="col-12 col-md-4 p-0 d-flex flex-column justify-content-start">
 				<img width="180" src="https://web-tolk.ru/web_tolk_logo_wide.png">
 				<p>Joomla Extensions</p>
