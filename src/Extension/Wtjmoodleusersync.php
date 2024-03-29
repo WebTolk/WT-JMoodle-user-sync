@@ -106,6 +106,18 @@ class Wtjmoodleusersync extends CMSPlugin implements SubscriberInterface
 		/** @var  $joomla_user_id int Joomla user id */
 		$joomla_user_id = ArrayHelper::getValue($user, 'id', 0, 'int');
 
+		$firstname = $user['name'];
+		$lastname  = $user['name'];
+
+		if (trim($user['name']) && str_contains($user['name'], ' '))
+		{
+			$tmp_name  = explode(' ', $user['name']);
+			$firstname = $tmp_name[0];
+			unset($tmp_name[0]);
+			// If name consist of more then 2 parts
+			$lastname = implode(' ', $tmp_name);
+		}
+
 		// We have a new user. Let's register he in Moodle
 		if ($isnew)
 		{
@@ -114,8 +126,8 @@ class Wtjmoodleusersync extends CMSPlugin implements SubscriberInterface
 					[
 						'username'  => strtolower($user['username']),
 						'password'  => $user['password_clear'],
-						'firstname' => $user['name'],
-						'lastname'  => $user['name'],
+						'firstname' => $firstname,
+						'lastname'  => $lastname,
 						'email'     => $user['email'],
 					]
 				]
@@ -159,8 +171,8 @@ class Wtjmoodleusersync extends CMSPlugin implements SubscriberInterface
 						[
 							'id'        => $moodle_user_id,
 							'username'  => strtolower($user['username']),
-							'firstname' => $user['name'],
-							'lastname'  => $user['name'],
+							'firstname' => $firstname,
+							'lastname'  => $lastname,
 							'email'     => $user['email'],
 						]
 					]
