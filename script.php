@@ -1,9 +1,9 @@
 <?php
 /**
  * @package       WT JMoodle user sync
- * @version       1.0.1
+ * @version       1.1.0
  * @Author        Sergey Tolkachyov, https://web-tolk.ru
- * @сopyright (c) March 2024 Sergey Tolkachyov. All rights reserved.
+ * @сopyright (c) April 2024 Sergey Tolkachyov. All rights reserved.
  * @license       GNU/GPL3 http://www.gnu.org/licenses/gpl-3.0.html
  * @since         1.0.0
  */
@@ -192,7 +192,6 @@ return new class () implements ServiceProviderInterface {
 						$wt_jmoodle_library_install_status = '<p class="text-success"><code> WT JMoodle library</code> successfully installed.';
 					}
 				}
-
 
 				$html .= $wt_jmoodle_library_install_status.'</div>
 				<div class="col-12 col-md-4 p-0 d-flex flex-column justify-content-start">

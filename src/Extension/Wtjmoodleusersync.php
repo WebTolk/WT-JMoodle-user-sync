@@ -1,9 +1,9 @@
 <?php
 /**
  * @package       WT JMoodle user sync
- * @version       1.0.1
+ * @version       1.1.0
  * @Author        Sergey Tolkachyov, https://web-tolk.ru
- * @сopyright (c) March 2024 Sergey Tolkachyov. All rights reserved.
+ * @сopyright (c) April 2024 Sergey Tolkachyov. All rights reserved.
  * @license       GNU/GPL3 http://www.gnu.org/licenses/gpl-3.0.html
  * @since         1.0.0
  */
@@ -43,6 +43,7 @@ class Wtjmoodleusersync extends CMSPlugin implements SubscriberInterface
 			'onUserAfterLogin'         => 'onUserAfterLogin',
 			'onUserLoginFailure'       => 'onUserLoginFailure',
 			'onUserLogout'             => 'onUserLogout',
+			'onUserAfterLogout'        => 'onUserAfterLogout',
 			'onUserAfterResetRequest'  => 'onUserAfterResetRequest',
 			'onUserAfterResetComplete' => 'onUserAfterResetComplete',
 			'onUserBeforeSave'         => 'onUserBeforeSave',
@@ -280,61 +281,33 @@ class Wtjmoodleusersync extends CMSPlugin implements SubscriberInterface
 		 */
 		[$options, $subject] = array_values($event->getArguments());
 		$user = $options['user'];
-
-		$moodle = new JMoodle();
-
 		$data = [
 			'username' => strtolower($user->username)
 		];
 
-		$config   = Factory::getContainer()->get('config');
-		$temppath = $config->get('tmp_path');
-		$file     = $temppath . '/' . UserHelper::genRandomPassword() . '.txt';
-		// First make sure we can write to file
-		touch($file);
-		if (!file_exists($file))
-		{
-			$moodle::saveToLog('Plugin WT JMoodle user sync can\'t create temporary file for cookie SSO', 'error');
+		$moodle = new JMoodle();
 
-		}
+		$config = Factory::getContainer()->get('config');
 
-		$curl_options    = [
-			CURLOPT_COOKIEJAR      => $file,
+		$curl_options = [
 			CURLOPT_RETURNTRANSFER => 1,
 			CURLOPT_HEADER         => 1,
 			CURLOPT_SSL_VERIFYPEER => false
 		];
+
 		$moodle_reposnse = $moodle->customRequest('/auth/jmoodle/jmoodle_login.php', $data, 'POST', $curl_options);
 
-		/**
-		 * Thanks to Joomdle for next lines.
-		 * Deprecated.
-		 * It will be replaced by working with the Set-Cookie header.
-		 */
-		$f = fopen($file, 'ro');
+		$cookies = $moodle_reposnse->getHeader('Set-Cookie');
 
-		if (!$f)
+		foreach ($cookies as $cookie)
 		{
-			$moodle::saveToLog('COM_JOOMDLE_ERROR_CANT_OPEN_CURL_FILE', 'error');
-		}
+			$parts = explode(';', $cookie);
+			$part  = explode('=', $parts[0]);
+			$name  = $part[0];
+			$value = !empty($part[1]) ? $part[1] : true;
 
-		while (!feof($f))
-		{
-			$line = fgets($f);
-			if (($line == '\n') || ((is_array($line)) && ($line[0] == '#')))
-			{
-				continue;
-			}
-			$parts = explode("\t", $line);
-			if (array_key_exists(5, $parts))
-			{
-				$name  = $parts[5];
-				$value = trim($parts[6]);
-				// SET cookie_domain in Joomla settings with leading DOT
-				setcookie($name, $value, 0, $config->get('cookie_path', '/'), $config->get('cookie_domain', ''));
-			}
+			setcookie($name, $value, 0, $config->get('cookie_path', '/'), $config->get('cookie_domain', ''));
 		}
-		unlink($file);
 	}
 
 	/**
@@ -373,11 +346,38 @@ class Wtjmoodleusersync extends CMSPlugin implements SubscriberInterface
 		 */
 		[$user, $options] = array_values($event->getArguments());
 
-//		$loggedOutUser = $this->getUserFactory()->loadUserById($user['id']);
-//
-//		if ($loggedOutUser->block) {
-//			return;
-//		}
+	}
+
+	/**
+	 * Method to log user's logout action
+	 *
+	 * @param $event Event
+	 *
+	 * @return  void
+	 *
+	 * @since   3.9.0
+	 */
+	public function onUserAfterLogout($event): void
+	{
+		if (!$this->params->get('use_sso'))
+		{
+			// SSO is disabled
+			return;
+		}
+
+		/**
+		 * @var   array $user    Holds the user data
+		 * @var   array $options Array holding options (remember, autoregister, group)
+		 */
+		[$user, $options] = array_values($event->getArguments());
+		$moodle = new JMoodle();
+
+		$data = [
+			'username' => strtolower($options['username'])
+		];
+
+		$moodle->customRequest('/auth/jmoodle/jmoodle_logout.php', $data, 'POST');
+
 	}
 
 	/**
@@ -435,7 +435,7 @@ class Wtjmoodleusersync extends CMSPlugin implements SubscriberInterface
 		// Check action
 		if ($action == 'check_joomla_user_session' && $this->params->get('use_sso'))
 		{
-			$username = $app->getInput()->json->getCmd('username');
+			$username = $app->getInput()->json->get('username', '', 'raw');
 			$user     = Factory::getContainer()->get(UserFactoryInterface::class)->loadUserByUsername($username);
 
 			$db             = Factory::getContainer()->get('DatabaseDriver');
